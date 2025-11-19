@@ -1,0 +1,74 @@
+/* Print Styles */
+@media print {
+  /* Hide all interactive elements */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Ensure white background for printing */
+  body {
+    background: white !important;
+  }
+
+  /* Menu view print styles */
+  .menu-view {
+    padding: 0.5in;
+  }
+
+  /* Prevent page breaks inside items */
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Cards view print styles */
+  .cards-view {
+    background: white !important;
+    padding: 0.25in;
+  }
+
+  .item-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 0.2in;
+  }
+
+  /* Adjust grid for printing */
+  .print\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .print\:gap-4 {
+    gap: 0.3in !important;
+  }
+
+  /* Adjust header sizing for print */
+  .print\:text-4xl {
+    font-size: 2.25rem !important;
+  }
+
+  .print\:mb-8 {
+    margin-bottom: 2rem !important;
+  }
+
+  .print\:mb-4 {
+    margin-bottom: 1rem !important;
+  }
+
+  /* Ensure images print well */
+  img {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* High contrast for readability */
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* General app styles */
+#root {
+  min-height: 100vh;
+}
