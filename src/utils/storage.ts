@@ -2,6 +2,7 @@ import { Restaurant } from '../types/menu';
 
 const API_KEY_STORAGE_KEY = 'menu-maker-openai-api-key';
 const MENU_HISTORY_KEY = 'menu-maker-history';
+const DARK_MODE_KEY = 'menu-maker-dark-mode';
 const MAX_HISTORY_ITEMS = 10;
 
 export interface MenuHistoryItem {
@@ -63,4 +64,20 @@ export function deleteMenuFromHistory(id: string): void {
   const history = getMenuHistory();
   const filtered = history.filter(item => item.id !== id);
   localStorage.setItem(MENU_HISTORY_KEY, JSON.stringify(filtered));
+}
+
+export function saveDarkMode(isDark: boolean): void {
+  localStorage.setItem(DARK_MODE_KEY, JSON.stringify(isDark));
+}
+
+export function getDarkMode(): boolean {
+  const stored = localStorage.getItem(DARK_MODE_KEY);
+  if (stored === null) {
+    return true; // Default to dark mode
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return true;
+  }
 }

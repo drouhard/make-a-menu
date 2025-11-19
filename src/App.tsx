@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Restaurant, ViewMode } from './types/menu';
 import { sushiRestaurant } from './data/sushiMenu';
 import { generateMenu, generateAllImages } from './services/openai';
-import { saveMenuToHistory } from './utils/storage';
+import { saveMenuToHistory, getDarkMode, saveDarkMode } from './utils/storage';
 import { Header } from './components/Header';
 import { MenuGenerator, ImageStyle } from './components/MenuGenerator';
 import { MenuHistory } from './components/MenuHistory';
@@ -16,6 +16,21 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('menu');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<string>('');
+  const [isDarkMode, setIsDarkMode] = useState(getDarkMode());
+
+  useEffect(() => {
+    // Apply dark mode class to document root
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    saveDarkMode(isDarkMode);
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   const handleGenerate = async (apiKey: string, prompt: string, imageStyle: ImageStyle) => {
     setIsGenerating(true);
@@ -63,8 +78,8 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <Header isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} />
 
       <main className="container mx-auto px-4 py-8">
         {/* Controls - Hidden when printing */}

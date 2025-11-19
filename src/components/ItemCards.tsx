@@ -10,14 +10,14 @@ export function ItemCards({ restaurant }: ItemCardsProps) {
   const allItems = restaurant.sections.flatMap(section => section.items);
 
   return (
-    <div className="cards-view bg-gray-50 min-h-screen">
+    <div className="cards-view bg-gray-50 dark:bg-gray-900 min-h-screen print:bg-white transition-colors">
       <div className="max-w-7xl mx-auto p-8">
         {/* Header - hidden when printing */}
         <div className="text-center mb-8 print:mb-4">
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">
+          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             {restaurant.name} - Menu Items
           </h2>
-          <p className="text-gray-600">Cut out these cards to play restaurant!</p>
+          <p className="text-gray-600 dark:text-gray-400">Cut out these cards to play restaurant!</p>
         </div>
 
         {/* Grid of cards */}
