@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { getApiKey, saveApiKey } from '../utils/storage';
 
 export type ImageStyle = 'realistic' | 'cartoon' | 'pixel-art' | 'silly';
+export type ImageSource = 'openai' | 'flickr';
 
 interface MenuGeneratorProps {
-  onGenerate: (apiKey: string, prompt: string, imageStyle: ImageStyle) => void;
+  onGenerate: (apiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource) => void;
   isGenerating: boolean;
   generationStatus?: string;
 }
@@ -13,6 +14,7 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
   const [apiKey, setApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
   const [imageStyle, setImageStyle] = useState<ImageStyle>('realistic');
+  const [imageSource, setImageSource] = useState<ImageSource>('flickr');
   const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
@@ -25,8 +27,9 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // API key is always required for menu generation
     if (!apiKey.trim()) {
-      alert('Please enter your OpenAI API key');
+      alert('Please enter your OpenAI API key (required for menu generation)');
       return;
     }
 
@@ -39,7 +42,7 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
     saveApiKey(apiKey);
 
     // Trigger generation
-    onGenerate(apiKey, prompt, imageStyle);
+    onGenerate(apiKey, prompt, imageStyle, imageSource);
   };
 
   return (
@@ -47,6 +50,43 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Generate Custom Menu</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Image Source Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Image Source
+          </label>
+          <div className="space-y-2">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="imageSource"
+                value="flickr"
+                checked={imageSource === 'flickr'}
+                onChange={(e) => setImageSource(e.target.value as ImageSource)}
+                disabled={isGenerating}
+                className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                <strong>Flickr / Creative Commons</strong> - Free images, faster generation
+              </span>
+            </label>
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="imageSource"
+                value="openai"
+                checked={imageSource === 'openai'}
+                onChange={(e) => setImageSource(e.target.value as ImageSource)}
+                disabled={isGenerating}
+                className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                <strong>OpenAI DALL-E</strong> - AI-generated, requires API key (costs apply)
+              </span>
+            </label>
+          </div>
+        </div>
+
         {/* API Key Input */}
         <div>
           <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -71,7 +111,7 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
             </button>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Your API key is stored locally in your browser and never sent to our servers.
+            Your API key is stored locally in your browser and never sent to our servers. {imageSource === 'flickr' && 'Only used for menu generation (images are free via Flickr).'}
           </p>
         </div>
 
@@ -91,24 +131,26 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
           />
         </div>
 
-        {/* Image Style Selection */}
-        <div>
-          <label htmlFor="imageStyle" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Image Style
-          </label>
-          <select
-            id="imageStyle"
-            value={imageStyle}
-            onChange={(e) => setImageStyle(e.target.value as ImageStyle)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            disabled={isGenerating}
-          >
-            <option value="realistic">Realistic (Professional Food Photography)</option>
-            <option value="cartoon">Cartoon / Manga</option>
-            <option value="pixel-art">Pixel Art</option>
-            <option value="silly">Silly / Whimsical</option>
-          </select>
-        </div>
+        {/* Image Style Selection - Only for OpenAI */}
+        {imageSource === 'openai' && (
+          <div>
+            <label htmlFor="imageStyle" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Image Style
+            </label>
+            <select
+              id="imageStyle"
+              value={imageStyle}
+              onChange={(e) => setImageStyle(e.target.value as ImageStyle)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              disabled={isGenerating}
+            >
+              <option value="realistic">Realistic (Professional Food Photography)</option>
+              <option value="cartoon">Cartoon / Manga</option>
+              <option value="pixel-art">Pixel Art</option>
+              <option value="silly">Silly / Whimsical</option>
+            </select>
+          </div>
+        )}
 
         {/* Generate Button */}
         <button
