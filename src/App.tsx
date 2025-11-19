@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Restaurant, ViewMode } from './types/menu';
+import { Restaurant, ViewMode, MenuItem } from './types/menu';
 import { sushiRestaurant } from './data/sushiMenu';
 import { generateMenu, generateAllImages } from './services/openai';
+import { generateFlickrImagesForMenu } from './services/flickr';
 import { saveMenuToHistory, getDarkMode, saveDarkMode } from './utils/storage';
 import { Header } from './components/Header';
-import { MenuGenerator, ImageStyle } from './components/MenuGenerator';
+import { MenuGenerator, ImageStyle, ImageSource } from './components/MenuGenerator';
 import { MenuHistory } from './components/MenuHistory';
 import { PrintControls } from './components/PrintControls';
 import { MenuDisplay } from './components/MenuDisplay';
@@ -32,31 +33,50 @@ function App() {
     setIsDarkMode(!isDarkMode);
   };
 
-  const handleGenerate = async (apiKey: string, prompt: string, imageStyle: ImageStyle) => {
+  const handleGenerate = async (apiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource) => {
     setIsGenerating(true);
     setGenerationStatus('Generating menu structure and items...');
 
     try {
-      // Step 1: Generate menu text
+      // Step 1: Generate menu text (always uses OpenAI for menu structure)
       const newMenu = await generateMenu(apiKey, prompt);
       setRestaurant(newMenu);
       setGenerationStatus('Menu created! Now generating images...');
 
-      // Step 2: Generate images for all items
-      const menuWithImages = await generateAllImages(
-        apiKey,
-        newMenu,
-        imageStyle,
-        (current, total, itemName) => {
-          setGenerationStatus(`Generating images: ${current}/${total} - ${itemName}`);
-        }
-      );
+      // Step 2: Generate images based on selected source
+      if (imageSource === 'openai') {
+        // Use OpenAI DALL-E for images
+        const menuWithImages = await generateAllImages(
+          apiKey,
+          newMenu,
+          imageStyle,
+          (current, total, itemName) => {
+            setGenerationStatus(`Generating images with DALL-E: ${current}/${total} - ${itemName}`);
+          }
+        );
+        setRestaurant(menuWithImages);
+      } else {
+        // Use Flickr for images
+        const allItems: MenuItem[] = [];
+        newMenu.sections.forEach(section => {
+          section.items.forEach(item => {
+            allItems.push(item);
+          });
+        });
 
-      setRestaurant(menuWithImages);
+        await generateFlickrImagesForMenu(
+          allItems,
+          (current, total, itemName) => {
+            setGenerationStatus(`Finding images from Flickr: ${current}/${total} - ${itemName}`);
+          }
+        );
+        setRestaurant({ ...newMenu });
+      }
+
       setGenerationStatus('All done! Your menu is ready.');
 
       // Save to history
-      saveMenuToHistory(menuWithImages, prompt);
+      saveMenuToHistory(newMenu, prompt);
 
       // Clear status after a few seconds
       setTimeout(() => {
