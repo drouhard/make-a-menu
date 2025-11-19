@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Restaurant, ViewMode, MenuItem } from './types/menu';
+import { Restaurant, MenuItem } from './types/menu';
 import { sushiRestaurant } from './data/sushiMenu';
 import { generateMenu, generateAllImages } from './services/openai';
 import { generateFlickrImagesForMenu } from './services/flickr';
@@ -7,14 +7,11 @@ import { saveMenuToHistory, getDarkMode, saveDarkMode } from './utils/storage';
 import { Header } from './components/Header';
 import { MenuGenerator, ImageStyle, ImageSource } from './components/MenuGenerator';
 import { MenuHistory } from './components/MenuHistory';
-import { PrintControls } from './components/PrintControls';
 import { MenuDisplay } from './components/MenuDisplay';
-import { ItemCards } from './components/ItemCards';
 import './App.css';
 
 function App() {
   const [restaurant, setRestaurant] = useState<Restaurant>(sushiRestaurant);
-  const [viewMode, setViewMode] = useState<ViewMode>('menu');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<string>('');
   const [isDarkMode, setIsDarkMode] = useState(getDarkMode());
@@ -33,7 +30,7 @@ function App() {
     setIsDarkMode(!isDarkMode);
   };
 
-  const handleGenerate = async (apiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource) => {
+  const handleGenerate = async (apiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => {
     setIsGenerating(true);
     setGenerationStatus('Generating menu structure and items...');
 
@@ -50,6 +47,7 @@ function App() {
           apiKey,
           newMenu,
           imageStyle,
+          customStylePrompt,
           (current, total, itemName) => {
             setGenerationStatus(`Generating images with DALL-E: ${current}/${total} - ${itemName}`);
           }
@@ -97,6 +95,10 @@ function App() {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       <Header isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} />
@@ -112,15 +114,32 @@ function App() {
 
           <MenuHistory onLoadMenu={setRestaurant} />
 
-          <PrintControls viewMode={viewMode} onViewModeChange={setViewMode} />
+          {/* Print Button */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6 print:hidden transition-colors">
+            <button
+              onClick={handlePrint}
+              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                />
+              </svg>
+              Print Menu
+            </button>
+          </div>
         </div>
 
-        {/* Content - Shown based on view mode */}
-        {viewMode === 'menu' ? (
-          <MenuDisplay restaurant={restaurant} />
-        ) : (
-          <ItemCards restaurant={restaurant} />
-        )}
+        {/* Content */}
+        <MenuDisplay restaurant={restaurant} />
       </main>
     </div>
   );

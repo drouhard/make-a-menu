@@ -16,6 +16,9 @@ export interface Restaurant {
   name: string;
   description?: string;
   sections: MenuSection[];
+  type?: string;
 }
 
 export type ViewMode = 'menu' | 'cards';
+
+export type RestaurantStyle = 'italian' | 'french' | 'japanese' | 'mexican' | 'american' | 'indian' | 'chinese' | 'thai' | 'default';

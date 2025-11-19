@@ -74,20 +74,28 @@ Return ONLY a JSON object in this exact format:
   return menuData as Restaurant;
 }
 
-export type ImageStyle = 'realistic' | 'cartoon' | 'pixel-art' | 'silly';
+export type ImageStyle = 'clip-art' | 'realistic' | 'cartoon' | 'pixel-art' | 'watercolor' | 'sketch' | 'silly' | 'custom';
 
-function getStylePrompt(style: ImageStyle): string {
+function getStylePrompt(style: ImageStyle, customPrompt?: string): string {
   switch (style) {
+    case 'clip-art':
+      return 'Simple clean clip art style, vector graphics look, bold outlines, flat colors, minimalist illustration, friendly and approachable design';
     case 'realistic':
       return 'Professional food photography, restaurant quality, well-lit, appetizing presentation, shallow depth of field, high-end culinary photography style';
     case 'cartoon':
       return 'Anime/manga style illustration, vibrant colors, cartoon food art, japanese animation style, cute and colorful';
     case 'pixel-art':
       return '16-bit pixel art style, retro video game aesthetic, pixel graphics, nostalgic gaming look';
+    case 'watercolor':
+      return 'Watercolor painting style, soft colors, artistic brush strokes, elegant and delicate, hand-painted look, artistic presentation';
+    case 'sketch':
+      return 'Hand-drawn pencil sketch style, artistic line work, sketchy illustration, black and white or light coloring, artistic and rustic';
     case 'silly':
       return 'Whimsical and silly illustration, fun cartoon style, playful and humorous, exaggerated features, bright and cheerful';
+    case 'custom':
+      return customPrompt || 'Simple clean illustration';
     default:
-      return 'Professional food photography';
+      return 'Simple clean clip art style, vector graphics look, bold outlines, flat colors';
   }
 }
 
@@ -95,7 +103,8 @@ export async function generateItemImage(
   apiKey: string,
   itemName: string,
   itemDescription: string,
-  imageStyle: ImageStyle = 'realistic',
+  imageStyle: ImageStyle = 'clip-art',
+  customStylePrompt?: string,
   onProgress?: (status: string) => void
 ): Promise<string> {
   const openai = new OpenAI({
@@ -107,13 +116,12 @@ export async function generateItemImage(
     onProgress(`Generating image for ${itemName}...`);
   }
 
-  const stylePrompt = getStylePrompt(imageStyle);
+  const stylePrompt = getStylePrompt(imageStyle, customStylePrompt);
   const response = await openai.images.generate({
-    model: "dall-e-3",
+    model: "dall-e-2",
     prompt: `${itemName}: ${itemDescription}. ${stylePrompt}`,
     n: 1,
-    size: "1024x1024",
-    quality: "standard"
+    size: "256x256"
   });
 
   if (!response.data || response.data.length === 0) {
@@ -126,7 +134,8 @@ export async function generateItemImage(
 export async function generateAllImages(
   apiKey: string,
   restaurant: Restaurant,
-  imageStyle: ImageStyle = 'realistic',
+  imageStyle: ImageStyle = 'clip-art',
+  customStylePrompt?: string,
   onProgress?: (current: number, total: number, itemName: string) => void
 ): Promise<Restaurant> {
   const allItems: MenuItem[] = [];
@@ -149,7 +158,7 @@ export async function generateAllImages(
     }
 
     try {
-      const imageUrl = await generateItemImage(apiKey, item.name, item.description, imageStyle);
+      const imageUrl = await generateItemImage(apiKey, item.name, item.description, imageStyle, customStylePrompt);
       item.imageUrl = imageUrl;
 
       // Small delay to avoid rate limiting
