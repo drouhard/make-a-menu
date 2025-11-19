@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getApiKey, saveApiKey } from '../utils/storage';
 
-export type ImageStyle = 'realistic' | 'cartoon' | 'pixel-art' | 'silly';
+export type ImageStyle = 'clip-art' | 'realistic' | 'cartoon' | 'pixel-art' | 'watercolor' | 'sketch' | 'silly' | 'custom';
 export type ImageSource = 'openai' | 'flickr';
 
 interface MenuGeneratorProps {
-  onGenerate: (apiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource) => void;
+  onGenerate: (apiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => void;
   isGenerating: boolean;
   generationStatus?: string;
 }
@@ -13,7 +13,8 @@ interface MenuGeneratorProps {
 export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: MenuGeneratorProps) {
   const [apiKey, setApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [imageStyle, setImageStyle] = useState<ImageStyle>('realistic');
+  const [imageStyle, setImageStyle] = useState<ImageStyle>('clip-art');
+  const [customStylePrompt, setCustomStylePrompt] = useState('');
   const [imageSource, setImageSource] = useState<ImageSource>('flickr');
   const [showApiKey, setShowApiKey] = useState(false);
 
@@ -38,11 +39,17 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
       return;
     }
 
+    // Validate custom style prompt if custom style is selected
+    if (imageSource === 'openai' && imageStyle === 'custom' && !customStylePrompt.trim()) {
+      alert('Please enter a custom style prompt');
+      return;
+    }
+
     // Save API key to localStorage
     saveApiKey(apiKey);
 
     // Trigger generation
-    onGenerate(apiKey, prompt, imageStyle, imageSource);
+    onGenerate(apiKey, prompt, imageStyle, imageSource, customStylePrompt);
   };
 
   return (
@@ -133,23 +140,50 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
 
         {/* Image Style Selection - Only for OpenAI */}
         {imageSource === 'openai' && (
-          <div>
-            <label htmlFor="imageStyle" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Image Style
-            </label>
-            <select
-              id="imageStyle"
-              value={imageStyle}
-              onChange={(e) => setImageStyle(e.target.value as ImageStyle)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={isGenerating}
-            >
-              <option value="realistic">Realistic (Professional Food Photography)</option>
-              <option value="cartoon">Cartoon / Manga</option>
-              <option value="pixel-art">Pixel Art</option>
-              <option value="silly">Silly / Whimsical</option>
-            </select>
-          </div>
+          <>
+            <div>
+              <label htmlFor="imageStyle" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Image Style
+              </label>
+              <select
+                id="imageStyle"
+                value={imageStyle}
+                onChange={(e) => setImageStyle(e.target.value as ImageStyle)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                disabled={isGenerating}
+              >
+                <option value="clip-art">Clip Art (Simple & Clean)</option>
+                <option value="realistic">Realistic (Professional Food Photography)</option>
+                <option value="cartoon">Cartoon / Manga</option>
+                <option value="watercolor">Watercolor Painting</option>
+                <option value="sketch">Hand-Drawn Sketch</option>
+                <option value="pixel-art">Pixel Art</option>
+                <option value="silly">Silly / Whimsical</option>
+                <option value="custom">Custom (Enter Your Own)</option>
+              </select>
+            </div>
+
+            {/* Custom Style Prompt Input - Only shown when custom style is selected */}
+            {imageStyle === 'custom' && (
+              <div>
+                <label htmlFor="customStyle" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Custom Style Description
+                </label>
+                <input
+                  type="text"
+                  id="customStyle"
+                  value={customStylePrompt}
+                  onChange={(e) => setCustomStylePrompt(e.target.value)}
+                  placeholder="e.g., vintage poster style, minimalist line art, 3D rendered..."
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  disabled={isGenerating}
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Describe the visual style you want for the images
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Generate Button */}

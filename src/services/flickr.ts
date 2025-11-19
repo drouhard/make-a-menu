@@ -32,10 +32,20 @@ async function searchFlickrPhotos(query: string, perPage: number = 10): Promise<
   url.searchParams.append('content_type', '1'); // Photos only
 
   const response = await fetch(url.toString());
+
+  if (!response.ok) {
+    throw new Error(`Flickr API request failed: ${response.status} ${response.statusText}`);
+  }
+
   const data = await response.json();
 
-  if (data.stat !== 'ok' || !data.photos || !data.photos.photo) {
-    throw new Error('Failed to fetch images from Flickr');
+  if (data.stat !== 'ok') {
+    throw new Error(`Flickr API error: ${data.message || 'Unknown error'}`);
+  }
+
+  if (!data.photos || !data.photos.photo || data.photos.photo.length === 0) {
+    console.warn(`No photos found for query: ${query}`);
+    return [];
   }
 
   return data.photos.photo.map((photo: any) => {
@@ -73,22 +83,26 @@ export async function getFlickrImageForItem(
   const searchQuery = `${itemName} food`;
 
   try {
-    const photos = await searchFlickrPhotos(searchQuery, 5);
+    const photos = await searchFlickrPhotos(searchQuery, 10);
 
     if (photos.length === 0) {
       // Fallback to a more generic search if no results
-      const genericPhotos = await searchFlickrPhotos('food dish', 5);
+      console.log(`No results for "${searchQuery}", trying generic search...`);
+      const genericPhotos = await searchFlickrPhotos('delicious food', 10);
       if (genericPhotos.length > 0) {
         return genericPhotos[0].url;
       }
-      throw new Error(`No images found for ${itemName}`);
+      // Return empty string instead of throwing to allow generation to continue
+      console.warn(`No images found for ${itemName}, skipping...`);
+      return '';
     }
 
     // Return the first (most relevant) photo
     return photos[0].url;
   } catch (error) {
     console.error(`Error fetching Flickr image for ${itemName}:`, error);
-    throw error;
+    // Return empty string to allow other images to continue generating
+    return '';
   }
 }
 
