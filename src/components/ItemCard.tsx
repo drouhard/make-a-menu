@@ -35,10 +35,7 @@ export function ItemCard({ item }: ItemCardProps) {
       </div>
 
       {/* Item name */}
-      <h3 className="text-xl font-bold text-gray-900 mb-2">{item.name}</h3>
-
-      {/* Item description */}
-      <p className="text-sm text-gray-600 leading-snug">{item.description}</p>
+      <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
     </div>
   );
 }

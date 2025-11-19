@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Restaurant, ViewMode } from './types/menu';
 import { sushiRestaurant } from './data/sushiMenu';
 import { generateMenu, generateAllImages } from './services/openai';
+import { saveMenuToHistory, getDarkMode, saveDarkMode } from './utils/storage';
 import { Header } from './components/Header';
-import { MenuGenerator } from './components/MenuGenerator';
+import { MenuGenerator, ImageStyle } from './components/MenuGenerator';
+import { MenuHistory } from './components/MenuHistory';
 import { PrintControls } from './components/PrintControls';
 import { MenuDisplay } from './components/MenuDisplay';
 import { ItemCards } from './components/ItemCards';
@@ -14,8 +16,23 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('menu');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<string>('');
+  const [isDarkMode, setIsDarkMode] = useState(getDarkMode());
 
-  const handleGenerate = async (apiKey: string, prompt: string) => {
+  useEffect(() => {
+    // Apply dark mode class to document root
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    saveDarkMode(isDarkMode);
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+  const handleGenerate = async (apiKey: string, prompt: string, imageStyle: ImageStyle) => {
     setIsGenerating(true);
     setGenerationStatus('Generating menu structure and items...');
 
@@ -29,6 +46,7 @@ function App() {
       const menuWithImages = await generateAllImages(
         apiKey,
         newMenu,
+        imageStyle,
         (current, total, itemName) => {
           setGenerationStatus(`Generating images: ${current}/${total} - ${itemName}`);
         }
@@ -36,6 +54,9 @@ function App() {
 
       setRestaurant(menuWithImages);
       setGenerationStatus('All done! Your menu is ready.');
+
+      // Save to history
+      saveMenuToHistory(menuWithImages, prompt);
 
       // Clear status after a few seconds
       setTimeout(() => {
@@ -57,8 +78,8 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <Header isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} />
 
       <main className="container mx-auto px-4 py-8">
         {/* Controls - Hidden when printing */}
@@ -68,6 +89,8 @@ function App() {
             isGenerating={isGenerating}
             generationStatus={generationStatus}
           />
+
+          <MenuHistory onLoadMenu={setRestaurant} />
 
           <PrintControls viewMode={viewMode} onViewModeChange={setViewMode} />
         </div>

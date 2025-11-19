@@ -74,10 +74,28 @@ Return ONLY a JSON object in this exact format:
   return menuData as Restaurant;
 }
 
+export type ImageStyle = 'realistic' | 'cartoon' | 'pixel-art' | 'silly';
+
+function getStylePrompt(style: ImageStyle): string {
+  switch (style) {
+    case 'realistic':
+      return 'Professional food photography, restaurant quality, well-lit, appetizing presentation, shallow depth of field, high-end culinary photography style';
+    case 'cartoon':
+      return 'Anime/manga style illustration, vibrant colors, cartoon food art, japanese animation style, cute and colorful';
+    case 'pixel-art':
+      return '16-bit pixel art style, retro video game aesthetic, pixel graphics, nostalgic gaming look';
+    case 'silly':
+      return 'Whimsical and silly illustration, fun cartoon style, playful and humorous, exaggerated features, bright and cheerful';
+    default:
+      return 'Professional food photography';
+  }
+}
+
 export async function generateItemImage(
   apiKey: string,
   itemName: string,
   itemDescription: string,
+  imageStyle: ImageStyle = 'realistic',
   onProgress?: (status: string) => void
 ): Promise<string> {
   const openai = new OpenAI({
@@ -89,9 +107,10 @@ export async function generateItemImage(
     onProgress(`Generating image for ${itemName}...`);
   }
 
+  const stylePrompt = getStylePrompt(imageStyle);
   const response = await openai.images.generate({
     model: "dall-e-3",
-    prompt: `Professional food photography of ${itemName}: ${itemDescription}. Restaurant quality, well-lit, appetizing presentation, shallow depth of field, high-end culinary photography style.`,
+    prompt: `${itemName}: ${itemDescription}. ${stylePrompt}`,
     n: 1,
     size: "1024x1024",
     quality: "standard"
@@ -107,6 +126,7 @@ export async function generateItemImage(
 export async function generateAllImages(
   apiKey: string,
   restaurant: Restaurant,
+  imageStyle: ImageStyle = 'realistic',
   onProgress?: (current: number, total: number, itemName: string) => void
 ): Promise<Restaurant> {
   const allItems: MenuItem[] = [];
@@ -129,7 +149,7 @@ export async function generateAllImages(
     }
 
     try {
-      const imageUrl = await generateItemImage(apiKey, item.name, item.description);
+      const imageUrl = await generateItemImage(apiKey, item.name, item.description, imageStyle);
       item.imageUrl = imageUrl;
 
       // Small delay to avoid rate limiting
