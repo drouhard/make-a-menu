@@ -2,6 +2,17 @@
 
 A web application that generates professional restaurant menus with AI-generated images, perfect for both practical use and family entertainment.
 
+## 🚀 Live Demo
+
+**[View Live Demo](https://drouhard.github.io/make-a-menu/)**
+
+Try it now! The starter sushi menu is ready to view and print immediately. To generate custom menus, you'll need your own OpenAI API key.
+
+> **Note:** To enable the live demo, make sure to:
+> 1. Make this repository public (Settings → General → Change visibility)
+> 2. Enable GitHub Pages (Settings → Pages → Source: GitHub Actions)
+> 3. The app will auto-deploy when changes are pushed to main or the current branch
+
 ## Features
 
 - **Starter Menu**: Pre-loaded authentic sushi restaurant menu
@@ -43,6 +54,24 @@ npm run build
 
 ```bash
 npm run preview
+```
+
+### Deploy to GitHub Pages
+
+The app includes a GitHub Actions workflow that automatically deploys to GitHub Pages:
+
+1. **Enable GitHub Pages** in repository settings:
+   - Go to Settings → Pages
+   - Under "Source", select "GitHub Actions"
+
+2. **Push to main or current branch** - the workflow will automatically build and deploy
+
+3. **Access your live site** at `https://drouhard.github.io/make-a-menu/`
+
+Alternatively, you can manually deploy:
+
+```bash
+npm run deploy
 ```
 
 ## Usage
