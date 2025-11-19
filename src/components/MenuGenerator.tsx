@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getApiKey, saveApiKey } from '../utils/storage';
 
+export type ImageStyle = 'realistic' | 'cartoon' | 'pixel-art' | 'silly';
+
 interface MenuGeneratorProps {
-  onGenerate: (apiKey: string, prompt: string) => void;
+  onGenerate: (apiKey: string, prompt: string, imageStyle: ImageStyle) => void;
   isGenerating: boolean;
   generationStatus?: string;
 }
@@ -10,6 +12,7 @@ interface MenuGeneratorProps {
 export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: MenuGeneratorProps) {
   const [apiKey, setApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
+  const [imageStyle, setImageStyle] = useState<ImageStyle>('realistic');
   const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
@@ -36,7 +39,7 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
     saveApiKey(apiKey);
 
     // Trigger generation
-    onGenerate(apiKey, prompt);
+    onGenerate(apiKey, prompt, imageStyle);
   };
 
   return (
@@ -86,6 +89,25 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             disabled={isGenerating}
           />
+        </div>
+
+        {/* Image Style Selection */}
+        <div>
+          <label htmlFor="imageStyle" className="block text-sm font-medium text-gray-700 mb-1">
+            Image Style
+          </label>
+          <select
+            id="imageStyle"
+            value={imageStyle}
+            onChange={(e) => setImageStyle(e.target.value as ImageStyle)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            disabled={isGenerating}
+          >
+            <option value="realistic">Realistic (Professional Food Photography)</option>
+            <option value="cartoon">Cartoon / Manga</option>
+            <option value="pixel-art">Pixel Art</option>
+            <option value="silly">Silly / Whimsical</option>
+          </select>
         </div>
 
         {/* Generate Button */}
