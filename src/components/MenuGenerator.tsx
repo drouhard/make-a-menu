@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getApiKey, saveApiKey, getFlickrApiKey, saveFlickrApiKey } from '../utils/storage';
+import { getApiKey, saveApiKey, getFlickrApiKey, saveFlickrApiKey, getPexelsApiKey, savePexelsApiKey } from '../utils/storage';
 import { getRandomPrompts } from '../data/restaurantPrompts';
 
 export type ImageStyle = 'clip-art' | 'realistic' | 'cartoon' | 'pixel-art' | 'watercolor' | 'sketch' | 'silly' | 'custom';
-export type ImageSource = 'openai' | 'flickr' | 'foodish';
+export type ImageSource = 'openai' | 'flickr' | 'pexels';
 
 interface MenuGeneratorProps {
-  onGenerate: (apiKey: string, flickrApiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => void;
+  onGenerate: (apiKey: string, flickrApiKey: string, pexelsApiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => void;
   isGenerating: boolean;
   generationStatus?: string;
 }
@@ -14,12 +14,14 @@ interface MenuGeneratorProps {
 export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: MenuGeneratorProps) {
   const [apiKey, setApiKey] = useState('');
   const [flickrApiKey, setFlickrApiKey] = useState('');
+  const [pexelsApiKey, setPexelsApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
   const [imageStyle, setImageStyle] = useState<ImageStyle>('clip-art');
   const [customStylePrompt, setCustomStylePrompt] = useState('');
-  const [imageSource, setImageSource] = useState<ImageSource>('foodish');
+  const [imageSource, setImageSource] = useState<ImageSource>('pexels');
   const [showApiKey, setShowApiKey] = useState(false);
   const [showFlickrApiKey, setShowFlickrApiKey] = useState(false);
+  const [showPexelsApiKey, setShowPexelsApiKey] = useState(false);
 
   // Generate random prompts on component mount
   const examplePrompts = useMemo(() => getRandomPrompts(8), []);
@@ -32,6 +34,10 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
     const savedFlickrKey = getFlickrApiKey();
     if (savedFlickrKey) {
       setFlickrApiKey(savedFlickrKey);
+    }
+    const savedPexelsKey = getPexelsApiKey();
+    if (savedPexelsKey) {
+      setPexelsApiKey(savedPexelsKey);
     }
   }, []);
 
@@ -47,6 +53,12 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
     // Flickr API key is required if Flickr is selected
     if (imageSource === 'flickr' && !flickrApiKey.trim()) {
       alert('Please enter your Flickr API key');
+      return;
+    }
+
+    // Pexels API key is required if Pexels is selected
+    if (imageSource === 'pexels' && !pexelsApiKey.trim()) {
+      alert('Please enter your Pexels API key');
       return;
     }
 
@@ -66,9 +78,12 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
     if (flickrApiKey.trim()) {
       saveFlickrApiKey(flickrApiKey);
     }
+    if (pexelsApiKey.trim()) {
+      savePexelsApiKey(pexelsApiKey);
+    }
 
     // Trigger generation
-    onGenerate(apiKey, flickrApiKey, prompt, imageStyle, imageSource, customStylePrompt);
+    onGenerate(apiKey, flickrApiKey, pexelsApiKey, prompt, imageStyle, imageSource, customStylePrompt);
   };
 
   return (
@@ -86,14 +101,14 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
               <input
                 type="radio"
                 name="imageSource"
-                value="foodish"
-                checked={imageSource === 'foodish'}
+                value="pexels"
+                checked={imageSource === 'pexels'}
                 onChange={(e) => setImageSource(e.target.value as ImageSource)}
                 disabled={isGenerating}
                 className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                <strong>Random Food Photos</strong> - Completely free, no API key needed!
+                <strong>Pexels</strong> - High-quality food photos, requires free API key
               </span>
             </label>
             <label className="flex items-center space-x-3 cursor-pointer">
@@ -154,6 +169,44 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
             Required for menu generation. Stored locally in your browser, never sent to our servers.
           </p>
         </div>
+
+        {/* Pexels API Key Input - Only shown when Pexels is selected */}
+        {imageSource === 'pexels' && (
+          <div>
+            <label htmlFor="pexelsApiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Pexels API Key
+            </label>
+            <div className="relative">
+              <input
+                type={showPexelsApiKey ? 'text' : 'password'}
+                id="pexelsApiKey"
+                value={pexelsApiKey}
+                onChange={(e) => setPexelsApiKey(e.target.value)}
+                placeholder="Get free API key from Pexels..."
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 pr-24"
+                disabled={isGenerating}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPexelsApiKey(!showPexelsApiKey)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 px-2 py-1"
+              >
+                {showPexelsApiKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Get your free Pexels API key at{' '}
+              <a
+                href="https://www.pexels.com/api/new/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                pexels.com/api
+              </a>
+            </p>
+          </div>
+        )}
 
         {/* Flickr API Key Input - Only shown when Flickr is selected */}
         {imageSource === 'flickr' && (
