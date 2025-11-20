@@ -10,28 +10,22 @@ export function MenuItem({ item, style }: MenuItemProps) {
   const colors = restaurantStyleColors[style];
 
   return (
-    <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 print:break-inside-avoid print:border-gray-200">
-      <div className="flex gap-4">
-        {/* Image */}
-        {item.imageUrl && (
-          <div className="flex-shrink-0">
-            <img
-              src={item.imageUrl}
-              alt={item.name}
-              className="w-24 h-24 object-cover rounded-lg"
-            />
-          </div>
-        )}
-
-        {/* Text Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-baseline gap-2">
-            <h4 className={`text-lg font-semibold ${colors.header} print:text-gray-800`}>{item.name}</h4>
-            <span className={`text-lg font-bold ${colors.primary} flex-shrink-0 print:text-indigo-600`}>{item.price}</span>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm leading-relaxed print:text-gray-600">{item.description}</p>
+    <div className="mb-4 print:break-inside-avoid">
+      {/* Menu Item with Dotted Leaders */}
+      <div className="flex items-baseline gap-2">
+        <div className="flex-1">
+          <h4 className={`inline font-serif text-base ${colors.header} print:text-gray-900 dark:text-gray-100`}>
+            {item.name}
+          </h4>
+          <span className="flex-1 border-b border-dotted border-gray-400 dark:border-gray-600 mx-2 inline-block align-bottom min-w-[20px] print:border-gray-400"></span>
         </div>
+        <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0 font-light print:text-gray-600">
+          {item.price}
+        </span>
       </div>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-snug print:text-gray-700 print:text-xs">
+        {item.description}
+      </p>
     </div>
   );
 }
