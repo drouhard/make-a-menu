@@ -21,13 +21,24 @@ export async function generateMenu(apiKey: string, prompt: string): Promise<Rest
 
 Create a menu with:
 - A creative restaurant name
-- A short description (optional)
+- A brief, understated description (optional, 1-2 sentences max)
 - 3-5 menu categories (e.g., Appetizers, Main Courses, Desserts, Beverages)
 - 3-6 items per category
 
+IMPORTANT: Write like a real restaurant menu, not marketing copy:
+- Keep descriptions SHORT and SIMPLE (8-15 words max)
+- Focus on key ingredients, not adjectives
+- Avoid excessive marketing language like "mouth-watering," "indulgent retreat," "artisanal journey"
+- Use concise, ingredient-focused descriptions
+- Examples of good descriptions:
+  * "Butter croissant with dark chocolate"
+  * "Fresh mozzarella, tomato, basil, olive oil"
+  * "Grilled salmon with lemon butter, seasonal vegetables"
+  * "House-made pasta with tomato sauce and parmesan"
+
 For each menu item, provide:
-- name: the dish name
-- description: appetizing description (20-40 words)
+- name: the dish name (simple, authentic)
+- description: concise, ingredient-focused description (8-15 words)
 - price: realistic price in USD format (e.g., "$12.95")
 - category: the category it belongs to
 
@@ -104,6 +115,7 @@ export async function generateItemImage(
   itemName: string,
   itemDescription: string,
   imageStyle: ImageStyle = 'clip-art',
+  backgroundPrompt: string = 'plain white background',
   customStylePrompt?: string,
   onProgress?: (status: string) => void
 ): Promise<string> {
@@ -119,7 +131,7 @@ export async function generateItemImage(
   const stylePrompt = getStylePrompt(imageStyle, customStylePrompt);
   const response = await openai.images.generate({
     model: "dall-e-2",
-    prompt: `${itemName}: ${itemDescription}. ${stylePrompt}`,
+    prompt: `${itemName}: ${itemDescription}. ${stylePrompt}. Background: ${backgroundPrompt}`,
     n: 1,
     size: "256x256"
   });
@@ -135,6 +147,7 @@ export async function generateAllImages(
   apiKey: string,
   restaurant: Restaurant,
   imageStyle: ImageStyle = 'clip-art',
+  backgroundPrompt: string = 'plain white background',
   customStylePrompt?: string,
   onProgress?: (current: number, total: number, itemName: string) => void
 ): Promise<Restaurant> {
@@ -158,7 +171,7 @@ export async function generateAllImages(
     }
 
     try {
-      const imageUrl = await generateItemImage(apiKey, item.name, item.description, imageStyle, customStylePrompt);
+      const imageUrl = await generateItemImage(apiKey, item.name, item.description, imageStyle, backgroundPrompt, customStylePrompt);
       item.imageUrl = imageUrl;
 
       // Small delay to avoid rate limiting

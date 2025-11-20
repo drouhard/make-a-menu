@@ -8,6 +8,7 @@ import { saveMenuToHistory, getDarkMode, saveDarkMode } from './utils/storage';
 import { convertMenuImagesToBase64 } from './utils/imageConverter';
 import { Header } from './components/Header';
 import { MenuGenerator, ImageStyle, ImageSource } from './components/MenuGenerator';
+import { ImageGenerator } from './components/ImageGenerator';
 import { MenuHistory } from './components/MenuHistory';
 import { MenuDisplay } from './components/MenuDisplay';
 import { PrintControls } from './components/PrintControls';
@@ -17,9 +18,15 @@ import './App.css';
 function App() {
   const [restaurant, setRestaurant] = useState<Restaurant>(sushiRestaurant);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<string>('');
+  const [imageGenerationStatus, setImageGenerationStatus] = useState<string>('');
   const [isDarkMode, setIsDarkMode] = useState(getDarkMode());
   const [viewMode, setViewMode] = useState<ViewMode>('menu');
+  const [hasGeneratedMenu, setHasGeneratedMenu] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [flickrApiKey, setFlickrApiKey] = useState('');
+  const [pexelsApiKey, setPexelsApiKey] = useState('');
 
   useEffect(() => {
     // Apply dark mode class to document root
@@ -35,73 +42,26 @@ function App() {
     setIsDarkMode(!isDarkMode);
   };
 
-  const handleGenerate = async (apiKey: string, flickrApiKey: string, pexelsApiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => {
+  const handleApiKeysChange = (newApiKey: string, newFlickrKey: string, newPexelsKey: string) => {
+    setApiKey(newApiKey);
+    setFlickrApiKey(newFlickrKey);
+    setPexelsApiKey(newPexelsKey);
+  };
+
+  const handleGenerateMenu = async (apiKey: string, prompt: string) => {
     setIsGenerating(true);
     setGenerationStatus('Generating menu structure and items...');
 
     try {
-      // Step 1: Generate menu text (always uses OpenAI for menu structure)
+      // Generate menu text only (no images)
       const newMenu = await generateMenu(apiKey, prompt);
       setRestaurant(newMenu);
-      setGenerationStatus('Menu created! Now generating images...');
-
-      // Step 2: Generate images based on selected source
-      const allItems: MenuItem[] = [];
-      newMenu.sections.forEach(section => {
-        section.items.forEach(item => {
-          allItems.push(item);
-        });
-      });
-
-      if (imageSource === 'openai') {
-        // Use OpenAI DALL-E for images
-        const menuWithImages = await generateAllImages(
-          apiKey,
-          newMenu,
-          imageStyle,
-          customStylePrompt,
-          (current, total, itemName) => {
-            setGenerationStatus(`Generating images with DALL-E: ${current}/${total} - ${itemName}`);
-          }
-        );
-        setRestaurant(menuWithImages);
-      } else if (imageSource === 'flickr') {
-        // Use Flickr for images
-        await generateFlickrImagesForMenu(
-          flickrApiKey,
-          allItems,
-          (current, total, itemName) => {
-            setGenerationStatus(`Finding images from Flickr: ${current}/${total} - ${itemName}`);
-          }
-        );
-        setRestaurant({ ...newMenu });
-      } else if (imageSource === 'pexels') {
-        // Use Pexels for images
-        await generatePexelsImagesForMenu(
-          allItems,
-          pexelsApiKey,
-          (current, total, itemName) => {
-            setGenerationStatus(`Finding images from Pexels: ${current}/${total} - ${itemName}`);
-          }
-        );
-        setRestaurant({ ...newMenu });
-      }
-
-      setGenerationStatus('Saving menu...');
-
-      // Convert images to base64 before saving (so they persist)
-      try {
-        await convertMenuImagesToBase64(allItems, (current, total) => {
-          setGenerationStatus(`Saving images: ${current}/${total}...`);
-        });
-      } catch (error) {
-        console.warn('Some images could not be converted to base64:', error);
-      }
+      setHasGeneratedMenu(true);
 
       // Save to history
       saveMenuToHistory(newMenu, prompt);
 
-      setGenerationStatus('All done! Your menu is ready.');
+      setGenerationStatus('Menu created! You can now generate images in Step 2.');
 
       // Clear status after a few seconds
       setTimeout(() => {
@@ -122,18 +82,118 @@ function App() {
     }
   };
 
+  const handleGenerateImages = async (
+    apiKey: string,
+    flickrApiKey: string,
+    pexelsApiKey: string,
+    imageStyle: ImageStyle,
+    imageSource: ImageSource,
+    backgroundPrompt: string,
+    customStylePrompt?: string
+  ) => {
+    setIsGeneratingImages(true);
+    setImageGenerationStatus('Starting image generation...');
+
+    try {
+      // Collect all items
+      const allItems: MenuItem[] = [];
+      restaurant.sections.forEach(section => {
+        section.items.forEach(item => {
+          allItems.push(item);
+        });
+      });
+
+      if (imageSource === 'openai') {
+        // Use OpenAI DALL-E for images
+        const menuWithImages = await generateAllImages(
+          apiKey,
+          restaurant,
+          imageStyle,
+          backgroundPrompt,
+          customStylePrompt,
+          (current, total, itemName) => {
+            setImageGenerationStatus(`Generating images with DALL-E: ${current}/${total} - ${itemName}`);
+          }
+        );
+        setRestaurant({ ...menuWithImages });
+      } else if (imageSource === 'flickr') {
+        // Use Flickr for images
+        await generateFlickrImagesForMenu(
+          flickrApiKey,
+          allItems,
+          (current, total, itemName) => {
+            setImageGenerationStatus(`Finding images from Flickr: ${current}/${total} - ${itemName}`);
+          }
+        );
+        setRestaurant({ ...restaurant });
+      } else if (imageSource === 'pexels') {
+        // Use Pexels for images
+        await generatePexelsImagesForMenu(
+          allItems,
+          pexelsApiKey,
+          (current, total, itemName) => {
+            setImageGenerationStatus(`Finding images from Pexels: ${current}/${total} - ${itemName}`);
+          }
+        );
+        setRestaurant({ ...restaurant });
+      }
+
+      setImageGenerationStatus('Saving images...');
+
+      // Convert images to base64 before saving (so they persist)
+      try {
+        await convertMenuImagesToBase64(allItems, (current, total) => {
+          setImageGenerationStatus(`Saving images: ${current}/${total}...`);
+        });
+      } catch (error) {
+        console.warn('Some images could not be converted to base64:', error);
+      }
+
+      setImageGenerationStatus('All done! Images are ready.');
+
+      // Clear status after a few seconds
+      setTimeout(() => {
+        setImageGenerationStatus('');
+      }, 3000);
+    } catch (error: any) {
+      console.error('Image generation error:', error);
+      setImageGenerationStatus(
+        `Error: ${error.message || 'Failed to generate images. Please check your API keys and try again.'}`
+      );
+
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        setImageGenerationStatus('');
+      }, 5000);
+    } finally {
+      setIsGeneratingImages(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900 transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900 print:bg-white transition-colors">
       <Header isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} />
 
       <main className="container mx-auto px-4 py-8">
         {/* Controls - Hidden when printing */}
         <div className="print:hidden">
           <MenuGenerator
-            onGenerate={handleGenerate}
+            onGenerate={handleGenerateMenu}
             isGenerating={isGenerating}
             generationStatus={generationStatus}
+            onApiKeysChange={handleApiKeysChange}
           />
+
+          {hasGeneratedMenu && (
+            <ImageGenerator
+              onGenerate={handleGenerateImages}
+              isGenerating={isGeneratingImages}
+              generationStatus={imageGenerationStatus}
+              apiKey={apiKey}
+              flickrApiKey={flickrApiKey}
+              pexelsApiKey={pexelsApiKey}
+            />
+          )}
 
           <MenuHistory onLoadMenu={setRestaurant} />
 
