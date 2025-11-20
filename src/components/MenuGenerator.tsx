@@ -1,36 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { getApiKey, saveApiKey } from '../utils/storage';
+import React, { useState, useEffect, useMemo } from 'react';
+import { getApiKey, saveApiKey, getFlickrApiKey, saveFlickrApiKey } from '../utils/storage';
+import { getRandomPrompts } from '../data/restaurantPrompts';
 
 export type ImageStyle = 'clip-art' | 'realistic' | 'cartoon' | 'pixel-art' | 'watercolor' | 'sketch' | 'silly' | 'custom';
-export type ImageSource = 'openai' | 'flickr';
+export type ImageSource = 'openai' | 'flickr' | 'foodish';
 
 interface MenuGeneratorProps {
-  onGenerate: (apiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => void;
+  onGenerate: (apiKey: string, flickrApiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => void;
   isGenerating: boolean;
   generationStatus?: string;
 }
 
 export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: MenuGeneratorProps) {
   const [apiKey, setApiKey] = useState('');
+  const [flickrApiKey, setFlickrApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
   const [imageStyle, setImageStyle] = useState<ImageStyle>('clip-art');
   const [customStylePrompt, setCustomStylePrompt] = useState('');
-  const [imageSource, setImageSource] = useState<ImageSource>('flickr');
+  const [imageSource, setImageSource] = useState<ImageSource>('foodish');
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showFlickrApiKey, setShowFlickrApiKey] = useState(false);
+
+  // Generate random prompts on component mount
+  const examplePrompts = useMemo(() => getRandomPrompts(8), []);
 
   useEffect(() => {
     const savedKey = getApiKey();
     if (savedKey) {
       setApiKey(savedKey);
     }
+    const savedFlickrKey = getFlickrApiKey();
+    if (savedFlickrKey) {
+      setFlickrApiKey(savedFlickrKey);
+    }
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // API key is always required for menu generation
+    // OpenAI API key is always required for menu generation
     if (!apiKey.trim()) {
       alert('Please enter your OpenAI API key (required for menu generation)');
+      return;
+    }
+
+    // Flickr API key is required if Flickr is selected
+    if (imageSource === 'flickr' && !flickrApiKey.trim()) {
+      alert('Please enter your Flickr API key');
       return;
     }
 
@@ -40,16 +56,19 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
     }
 
     // Validate custom style prompt if custom style is selected
-    if (imageSource === 'openai' && imageStyle === 'custom' && !customStylePrompt.trim()) {
+    if (imageStyle === 'custom' && !customStylePrompt.trim()) {
       alert('Please enter a custom style prompt');
       return;
     }
 
-    // Save API key to localStorage
+    // Save API keys to localStorage
     saveApiKey(apiKey);
+    if (flickrApiKey.trim()) {
+      saveFlickrApiKey(flickrApiKey);
+    }
 
     // Trigger generation
-    onGenerate(apiKey, prompt, imageStyle, imageSource, customStylePrompt);
+    onGenerate(apiKey, flickrApiKey, prompt, imageStyle, imageSource, customStylePrompt);
   };
 
   return (
@@ -67,6 +86,20 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
               <input
                 type="radio"
                 name="imageSource"
+                value="foodish"
+                checked={imageSource === 'foodish'}
+                onChange={(e) => setImageSource(e.target.value as ImageSource)}
+                disabled={isGenerating}
+                className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                <strong>Random Food Photos</strong> - Completely free, no API key needed!
+              </span>
+            </label>
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="imageSource"
                 value="flickr"
                 checked={imageSource === 'flickr'}
                 onChange={(e) => setImageSource(e.target.value as ImageSource)}
@@ -74,7 +107,7 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
                 className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                <strong>Flickr / Creative Commons</strong> - Free images, faster generation
+                <strong>Flickr / Creative Commons</strong> - Searchable images, requires free API key
               </span>
             </label>
             <label className="flex items-center space-x-3 cursor-pointer">
@@ -88,13 +121,13 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
                 className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                <strong>OpenAI DALL-E</strong> - AI-generated, requires API key (costs apply)
+                <strong>OpenAI DALL-E</strong> - AI-generated custom images, requires API key (costs apply)
               </span>
             </label>
           </div>
         </div>
 
-        {/* API Key Input */}
+        {/* OpenAI API Key Input - Always shown */}
         <div>
           <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             OpenAI API Key
@@ -118,9 +151,47 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
             </button>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Your API key is stored locally in your browser and never sent to our servers. {imageSource === 'flickr' && 'Only used for menu generation (images are free via Flickr).'}
+            Required for menu generation. Stored locally in your browser, never sent to our servers.
           </p>
         </div>
+
+        {/* Flickr API Key Input - Only shown when Flickr is selected */}
+        {imageSource === 'flickr' && (
+          <div>
+            <label htmlFor="flickrApiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Flickr API Key
+            </label>
+            <div className="relative">
+              <input
+                type={showFlickrApiKey ? 'text' : 'password'}
+                id="flickrApiKey"
+                value={flickrApiKey}
+                onChange={(e) => setFlickrApiKey(e.target.value)}
+                placeholder="Get free API key from Flickr..."
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 pr-24"
+                disabled={isGenerating}
+              />
+              <button
+                type="button"
+                onClick={() => setShowFlickrApiKey(!showFlickrApiKey)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 px-2 py-1"
+              >
+                {showFlickrApiKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Get your free Flickr API key at{' '}
+              <a
+                href="https://www.flickr.com/services/api/misc.api_keys.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                flickr.com/services/api
+              </a>
+            </p>
+          </div>
+        )}
 
         {/* Prompt Input */}
         <div>
@@ -174,12 +245,12 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
                   id="customStyle"
                   value={customStylePrompt}
                   onChange={(e) => setCustomStylePrompt(e.target.value)}
-                  placeholder="e.g., vintage poster style, minimalist line art, 3D rendered..."
+                  placeholder='e.g., "looks like my cat drew them with a marker in her mouth" or "dystopian cybernetic future unicorn dreamcore synthwave"'
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   disabled={isGenerating}
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Describe the visual style you want for the images
+                  Get creative! Describe any visual style you want for the images
                 </p>
               </div>
             )}
@@ -205,16 +276,11 @@ export function MenuGenerator({ onGenerate, isGenerating, generationStatus }: Me
 
       {/* Example Prompts */}
       <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Example prompts:</p>
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Try one of these (changes on each reload!):
+        </p>
         <div className="flex flex-wrap gap-2">
-          {[
-            'Italian pizzeria',
-            'French bistro',
-            'Mexican street food',
-            'Thai restaurant',
-            'American diner',
-            'Indian curry house'
-          ].map((example) => (
+          {examplePrompts.map((example) => (
             <button
               key={example}
               type="button"

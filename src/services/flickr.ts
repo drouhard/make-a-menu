@@ -1,9 +1,5 @@
 import { MenuItem } from '../types/menu';
 
-// Flickr API - public photos search
-// Using free API, no key required for basic search
-const FLICKR_API_KEY = '9c7482096b222c673ca4ce58f9112fe2'; // Public API key for demo purposes
-
 export interface FlickrPhoto {
   id: string;
   owner: string;
@@ -17,11 +13,11 @@ export interface FlickrPhoto {
 /**
  * Search Flickr for Creative Commons licensed images
  */
-async function searchFlickrPhotos(query: string, perPage: number = 10): Promise<FlickrPhoto[]> {
+async function searchFlickrPhotos(apiKey: string, query: string, perPage: number = 10): Promise<FlickrPhoto[]> {
   // Flickr API search endpoint
   const url = new URL('https://api.flickr.com/services/rest/');
   url.searchParams.append('method', 'flickr.photos.search');
-  url.searchParams.append('api_key', FLICKR_API_KEY);
+  url.searchParams.append('api_key', apiKey);
   url.searchParams.append('text', query);
   url.searchParams.append('license', '4,5,6,7,8,9,10'); // Creative Commons licenses
   url.searchParams.append('sort', 'relevance');
@@ -70,6 +66,7 @@ async function searchFlickrPhotos(query: string, perPage: number = 10): Promise<
  * Generate an image URL for a menu item using Flickr
  */
 export async function getFlickrImageForItem(
+  apiKey: string,
   itemName: string,
   _itemDescription: string,
   onProgress?: (status: string) => void
@@ -83,12 +80,12 @@ export async function getFlickrImageForItem(
   const searchQuery = `${itemName} food`;
 
   try {
-    const photos = await searchFlickrPhotos(searchQuery, 10);
+    const photos = await searchFlickrPhotos(apiKey, searchQuery, 10);
 
     if (photos.length === 0) {
       // Fallback to a more generic search if no results
       console.log(`No results for "${searchQuery}", trying generic search...`);
-      const genericPhotos = await searchFlickrPhotos('delicious food', 10);
+      const genericPhotos = await searchFlickrPhotos(apiKey, 'delicious food', 10);
       if (genericPhotos.length > 0) {
         return genericPhotos[0].url;
       }
@@ -110,6 +107,7 @@ export async function getFlickrImageForItem(
  * Generate images for all menu items using Flickr
  */
 export async function generateFlickrImagesForMenu(
+  apiKey: string,
   items: MenuItem[],
   onProgress?: (current: number, total: number, itemName: string) => void
 ): Promise<void> {
@@ -123,7 +121,7 @@ export async function generateFlickrImagesForMenu(
     }
 
     try {
-      const imageUrl = await getFlickrImageForItem(item.name, item.description);
+      const imageUrl = await getFlickrImageForItem(apiKey, item.name, item.description);
       item.imageUrl = imageUrl;
 
       // Small delay to be respectful to Flickr's API

@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Restaurant, MenuItem } from './types/menu';
+import { Restaurant, MenuItem, ViewMode } from './types/menu';
 import { sushiRestaurant } from './data/sushiMenu';
 import { generateMenu, generateAllImages } from './services/openai';
 import { generateFlickrImagesForMenu } from './services/flickr';
+import { generateFoodishImagesForMenu } from './services/foodish';
 import { saveMenuToHistory, getDarkMode, saveDarkMode } from './utils/storage';
+import { convertMenuImagesToBase64 } from './utils/imageConverter';
 import { Header } from './components/Header';
 import { MenuGenerator, ImageStyle, ImageSource } from './components/MenuGenerator';
 import { MenuHistory } from './components/MenuHistory';
 import { MenuDisplay } from './components/MenuDisplay';
+import { PrintControls } from './components/PrintControls';
+import { ItemCards } from './components/ItemCards';
 import './App.css';
 
 function App() {
@@ -15,6 +19,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<string>('');
   const [isDarkMode, setIsDarkMode] = useState(getDarkMode());
+  const [viewMode, setViewMode] = useState<ViewMode>('menu');
 
   useEffect(() => {
     // Apply dark mode class to document root
@@ -30,7 +35,7 @@ function App() {
     setIsDarkMode(!isDarkMode);
   };
 
-  const handleGenerate = async (apiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => {
+  const handleGenerate = async (apiKey: string, flickrApiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => {
     setIsGenerating(true);
     setGenerationStatus('Generating menu structure and items...');
 
@@ -41,6 +46,13 @@ function App() {
       setGenerationStatus('Menu created! Now generating images...');
 
       // Step 2: Generate images based on selected source
+      const allItems: MenuItem[] = [];
+      newMenu.sections.forEach(section => {
+        section.items.forEach(item => {
+          allItems.push(item);
+        });
+      });
+
       if (imageSource === 'openai') {
         // Use OpenAI DALL-E for images
         const menuWithImages = await generateAllImages(
@@ -53,28 +65,42 @@ function App() {
           }
         );
         setRestaurant(menuWithImages);
-      } else {
+      } else if (imageSource === 'flickr') {
         // Use Flickr for images
-        const allItems: MenuItem[] = [];
-        newMenu.sections.forEach(section => {
-          section.items.forEach(item => {
-            allItems.push(item);
-          });
-        });
-
         await generateFlickrImagesForMenu(
+          flickrApiKey,
           allItems,
           (current, total, itemName) => {
             setGenerationStatus(`Finding images from Flickr: ${current}/${total} - ${itemName}`);
           }
         );
         setRestaurant({ ...newMenu });
+      } else {
+        // Use Foodish for images
+        await generateFoodishImagesForMenu(
+          allItems,
+          (current, total, itemName) => {
+            setGenerationStatus(`Fetching food images: ${current}/${total} - ${itemName}`);
+          }
+        );
+        setRestaurant({ ...newMenu });
       }
 
-      setGenerationStatus('All done! Your menu is ready.');
+      setGenerationStatus('Saving menu...');
+
+      // Convert images to base64 before saving (so they persist)
+      try {
+        await convertMenuImagesToBase64(allItems, (current, total) => {
+          setGenerationStatus(`Saving images: ${current}/${total}...`);
+        });
+      } catch (error) {
+        console.warn('Some images could not be converted to base64:', error);
+      }
 
       // Save to history
       saveMenuToHistory(newMenu, prompt);
+
+      setGenerationStatus('All done! Your menu is ready.');
 
       // Clear status after a few seconds
       setTimeout(() => {
@@ -95,12 +121,8 @@ function App() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900 transition-colors">
       <Header isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} />
 
       <main className="container mx-auto px-4 py-8">
@@ -114,32 +136,16 @@ function App() {
 
           <MenuHistory onLoadMenu={setRestaurant} />
 
-          {/* Print Button */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6 print:hidden transition-colors">
-            <button
-              onClick={handlePrint}
-              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                />
-              </svg>
-              Print Menu
-            </button>
-          </div>
+          {/* Print Controls */}
+          <PrintControls viewMode={viewMode} onViewModeChange={setViewMode} />
         </div>
 
         {/* Content */}
-        <MenuDisplay restaurant={restaurant} />
+        {viewMode === 'menu' ? (
+          <MenuDisplay restaurant={restaurant} />
+        ) : (
+          <ItemCards restaurant={restaurant} />
+        )}
       </main>
     </div>
   );

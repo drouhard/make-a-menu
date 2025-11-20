@@ -1,9 +1,46 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" fill="#4F46E5"/>
-  <path d="M20 30 h60 v5 h-60 z" fill="#FFF"/>
-  <path d="M20 45 h60 v5 h-60 z" fill="#FFF"/>
-  <path d="M20 60 h60 v5 h-60 z" fill="#FFF"/>
-  <circle cx="15" cy="32.5" r="3" fill="#FCD34D"/>
-  <circle cx="15" cy="47.5" r="3" fill="#FCD34D"/>
-  <circle cx="15" cy="62.5" r="3" fill="#FCD34D"/>
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B9D;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FEC163;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="pizza" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FDB55E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF9A3D;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="50" cy="50" r="50" fill="url(#bg)"/>
+
+  <!-- Pizza slice -->
+  <g transform="translate(50,50)">
+    <!-- Crust -->
+    <path d="M 0,0 L -20,-20 A 28.28 28.28 0 0 1 20,-20 Z" fill="url(#pizza)" stroke="#D97F3D" stroke-width="2"/>
+
+    <!-- Cheese highlights -->
+    <path d="M 0,0 L -18,-18 A 26 26 0 0 1 18,-18 Z" fill="#FFD700" opacity="0.5"/>
+
+    <!-- Pepperoni -->
+    <circle cx="-8" cy="-12" r="3" fill="#E63946"/>
+    <circle cx="5" cy="-14" r="3" fill="#E63946"/>
+    <circle cx="-2" cy="-8" r="3" fill="#E63946"/>
+
+    <!-- Sparkles -->
+    <circle cx="-22" cy="15" r="2" fill="#FFEB3B"/>
+    <circle cx="25" cy="10" r="2.5" fill="#FFEB3B"/>
+    <circle cx="15" cy="-25" r="1.5" fill="#FFEB3B"/>
+  </g>
+
+  <!-- Fun food elements around -->
+  <!-- Star 1 -->
+  <path d="M 15,15 L 17,20 L 22,20 L 18,23 L 20,28 L 15,25 L 10,28 L 12,23 L 8,20 L 13,20 Z" fill="#FFEB3B"/>
+  <!-- Star 2 -->
+  <path d="M 85,25 L 87,30 L 92,30 L 88,33 L 90,38 L 85,35 L 80,38 L 82,33 L 78,30 L 83,30 Z" fill="#4ADE80"/>
+
+  <!-- Hearts -->
+  <g transform="translate(85,75)">
+    <path d="M 0,-3 C -2,-5 -5,-5 -5,-2 C -5,1 0,4 0,4 C 0,4 5,1 5,-2 C 5,-5 2,-5 0,-3 Z" fill="#FF6B9D"/>
+  </g>
 </svg>
