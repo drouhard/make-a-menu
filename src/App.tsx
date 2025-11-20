@@ -3,7 +3,7 @@ import { Restaurant, MenuItem, ViewMode } from './types/menu';
 import { sushiRestaurant } from './data/sushiMenu';
 import { generateMenu, generateAllImages } from './services/openai';
 import { generateFlickrImagesForMenu } from './services/flickr';
-import { generateFoodishImagesForMenu } from './services/foodish';
+import { generatePexelsImagesForMenu } from './services/pexels';
 import { saveMenuToHistory, getDarkMode, saveDarkMode } from './utils/storage';
 import { convertMenuImagesToBase64 } from './utils/imageConverter';
 import { Header } from './components/Header';
@@ -35,7 +35,7 @@ function App() {
     setIsDarkMode(!isDarkMode);
   };
 
-  const handleGenerate = async (apiKey: string, flickrApiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => {
+  const handleGenerate = async (apiKey: string, flickrApiKey: string, pexelsApiKey: string, prompt: string, imageStyle: ImageStyle, imageSource: ImageSource, customStylePrompt?: string) => {
     setIsGenerating(true);
     setGenerationStatus('Generating menu structure and items...');
 
@@ -75,12 +75,13 @@ function App() {
           }
         );
         setRestaurant({ ...newMenu });
-      } else {
-        // Use Foodish for images
-        await generateFoodishImagesForMenu(
+      } else if (imageSource === 'pexels') {
+        // Use Pexels for images
+        await generatePexelsImagesForMenu(
           allItems,
+          pexelsApiKey,
           (current, total, itemName) => {
-            setGenerationStatus(`Fetching food images: ${current}/${total} - ${itemName}`);
+            setGenerationStatus(`Finding images from Pexels: ${current}/${total} - ${itemName}`);
           }
         );
         setRestaurant({ ...newMenu });
