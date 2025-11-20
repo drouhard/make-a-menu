@@ -1,6 +1,7 @@
 import { Restaurant } from '../types/menu';
 
 const API_KEY_STORAGE_KEY = 'menu-maker-openai-api-key';
+const FLICKR_API_KEY_STORAGE_KEY = 'menu-maker-flickr-api-key';
 const MENU_HISTORY_KEY = 'menu-maker-history';
 const DARK_MODE_KEY = 'menu-maker-dark-mode';
 const MAX_HISTORY_ITEMS = 10;
@@ -22,6 +23,18 @@ export function getApiKey(): string | null {
 
 export function clearApiKey(): void {
   localStorage.removeItem(API_KEY_STORAGE_KEY);
+}
+
+export function saveFlickrApiKey(apiKey: string): void {
+  localStorage.setItem(FLICKR_API_KEY_STORAGE_KEY, apiKey);
+}
+
+export function getFlickrApiKey(): string | null {
+  return localStorage.getItem(FLICKR_API_KEY_STORAGE_KEY);
+}
+
+export function clearFlickrApiKey(): void {
+  localStorage.removeItem(FLICKR_API_KEY_STORAGE_KEY);
 }
 
 export function saveMenuToHistory(restaurant: Restaurant, prompt: string): void {

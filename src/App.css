@@ -72,3 +72,89 @@
 #root {
   min-height: 100vh;
 }
+
+/* Fun animations for kids */
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes rainbow {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(99, 102, 241, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.8), 0 0 30px rgba(99, 102, 241, 0.5);
+  }
+}
+
+/* Apply animations to interactive elements */
+.menu-maker-button {
+  animation: pulse-glow 2s infinite;
+  transition: all 0.3s ease;
+}
+
+.menu-maker-button:hover {
+  transform: scale(1.05);
+  animation: wiggle 0.5s ease-in-out;
+}
+
+.menu-item-card {
+  animation: bounce-in 0.5s ease-out;
+}
+
+.menu-item-card:hover {
+  transform: translateY(-5px);
+  transition: transform 0.3s ease;
+}
+
+.food-emoji {
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+.prompt-chip:hover {
+  animation: wiggle 0.3s ease-in-out;
+}
